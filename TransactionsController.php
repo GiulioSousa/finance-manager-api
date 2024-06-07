@@ -30,29 +30,6 @@ class TransactionsController
         }
     }
 
-    public function handleRequest()
-    {
-        $method = $_SERVER['REQUEST_METHOD'];
-
-        switch ($method) {
-            case 'GET':
-                $this->getTransactions();
-                break;
-            case 'POST':
-                $this->createTransaction();
-                break;
-            case 'PUT':
-                $this->updateTransaction();
-                break;
-            case 'DELETE':
-                $this->deleteTransaction();
-                break;
-            default:
-                $this->sendResponse(405, 'Method Not Allowed');
-                break;
-        }
-    }
-
     public function getTransactions()
     {
         try {
@@ -65,9 +42,33 @@ class TransactionsController
         }
     }
 
-    private function createTransaction()
+    public function createTransaction($jsonData)
     {
-        $data = json_decode(file_get_contents('php://input'), true);
+        $item = json_decode($jsonData, true);
+
+        $dataCad = $item['data_cad'];
+        $type = $item['type'];
+        $description = $item['description'];
+        $price = $item['price'];
+        $category = $item['category'];
+        $status = $item['status'];
+        $account = $item['account'];
+
+        try {
+            $stmt = $this->pdo->prepare("INSERT INTO transactions (data_cad, type, description, price, category, status, account) VALUES (:data_cad, :type, :description, :price, :category, :status, :account)");
+            $stmt->bindParam(':data_cad', $dataCad);
+            $stmt->bindParam(':type', $type);
+            $stmt->bindParam(':description', $description);
+            $stmt->bindParam(':price', $price);
+            $stmt->bindParam(':category', $category);
+            $stmt->bindParam(':status', $status);
+            $stmt->bindParam(':account', $account);
+            $stmt->execute();
+            $this->sendResponse(201, json_encode(['message' => 'Nova transação criada com sucesso!']));
+        } catch (PDOException $e) {
+            $this->sendResponse(500, json_encode(['error' => 'Erro ao criar nova transação: ' . $e->getMessage()]));
+        }
+
         $this->sendResponse(201, 'Transaction Created');
     }
 
