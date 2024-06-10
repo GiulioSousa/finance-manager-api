@@ -35,7 +35,7 @@ class TransactionsController
         try {
             $stmt = $this->pdo->query("SELECT * FROM transactions");
             $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            header("Access-Control-Allow-Origin: *");
+            // header("Access-Control-Allow-Origin: *");
             $this->sendResponse(200, json_encode($transactions));
         } catch (PDOException $e) {
             $this->sendResponse(500, json_encode(['error' => 'Failed to retrieve transactions: ' . $e->getMessage()]));
@@ -46,6 +46,13 @@ class TransactionsController
     {
         $item = json_decode($jsonData, true);
 
+        //
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $this->sendResponse(400, json_encode(['error' => 'Invalid JSON data']));
+            return;
+        }
+        //
+
         $dataCad = $item['data_cad'];
         $type = $item['type'];
         $description = $item['description'];
@@ -53,6 +60,13 @@ class TransactionsController
         $category = $item['category'];
         $status = $item['status'];
         $account = $item['account'];
+
+        //
+        if (!$dataCad || !$type || !$description || !$price || !$category || !$status || !$account) {
+            $this->sendResponse(400, json_encode(['error' => 'Missing required fields']));
+            return;
+        }
+        //
 
         try {
             $stmt = $this->pdo->prepare("INSERT INTO transactions (data_cad, type, description, price, category, status, account) VALUES (:data_cad, :type, :description, :price, :category, :status, :account)");
@@ -65,7 +79,11 @@ class TransactionsController
             $stmt->bindParam(':account', $account);
             $stmt->execute();
             $this->sendResponse(201, json_encode(['message' => 'Nova transação criada com sucesso!']));
+            return;
         } catch (PDOException $e) {
+            //
+            error_log('Erro ao criar nova transação: ' . $e->getMessage());
+            //
             $this->sendResponse(500, json_encode(['error' => 'Erro ao criar nova transação: ' . $e->getMessage()]));
         }
 
@@ -83,7 +101,7 @@ class TransactionsController
         $this->sendResponse(200, 'Transaction Deleted');
     }
 
-    private function sendResponse($status, $data)
+    public function sendResponse($status, $data)
     {
         header('Content-Type: application/json');
         http_response_code($status);
