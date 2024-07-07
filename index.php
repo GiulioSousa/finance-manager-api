@@ -4,7 +4,8 @@ require_once './env.php';
 require_once './TransactionsController.php';
 
 header("Access-Control-Allow-Origin: http://localhost:3000");
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+// header("Access-Control-Allow-Origin: http://localhost:3001");
+header("Access-Control-Allow-Methods: GET, POST, PUT, OPTIONS");
 header("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept");
 
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
@@ -42,6 +43,14 @@ switch ($requestUri) {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $jsonData = file_get_contents('php://input');
             $controller->createTransaction($jsonData);
+        } else {
+            $controller->sendResponse(405, json_encode(['error' => 'Method Not Allowed']));
+        }
+        break;
+    case '/update-transaction':
+        if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+            $jsonData = file_get_contents('php://input');
+            $controller->updateTransaction($jsonData);
         } else {
             $controller->sendResponse(405, json_encode(['error' => 'Method Not Allowed']));
         }
