@@ -133,13 +133,34 @@ class TransactionsController
             error_log('Erro ao atualizar transação: ' . $e->getMessage());
             $this->sendResponse(500, json_encode(['error' => 'Erro ao atualizar transação: ' . $e->getMessage()]));
         }
-
-        $this->sendResponse(200, 'Transação atualizada com sucesso!2');
     }
 
-    private function deleteTransaction()
+    public function deleteTransaction($jsonData)
     {
-        $this->sendResponse(200, 'Transaction Deleted');
+        $item = json_decode($jsonData, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $this->sendResponse(400, json_encode(['error' => 'Invalid JSON data']));
+            return;
+        }
+
+        $id = $item['id'];
+
+        if (!$id) {
+            $this->sendResponse(400, json_encode(['error' => 'Missing required fields']));
+            return;
+        }
+        
+        try {
+            $stmt = $this->pdo->prepare("DELETE FROM transactions WHERE id = :id");
+            $stmt->bindParam(':id', $id);
+            $stmt->execute();
+            $this->sendResponse(200, json_encode(['success' => 'Transação excluída com sucesso!']));
+            return;
+        } catch (PDOException $e) {
+            error_log('Erro ao excluir transação: ' . $e->getMessage());
+            $this->sendResponse(500, json_encode(['error' => 'Erro ao excluir transação: ' . $e->getMessage()]));
+        }
     }
 
     public function sendResponse($status, $data)
